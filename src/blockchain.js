@@ -145,7 +145,7 @@ class Blockchain {
                 }
 
                 // Veify the message with wallet address and signature: `bitcoinMessage.verify(message, address, signature)`
-                let verified = true; //bitcoinMessage.verify(message, address, signature);
+                let verified = bitcoinMessage.verify(message, address, signature);
 
                 if (!verified) {
                     reject("Message not verified");
@@ -212,7 +212,6 @@ class Blockchain {
             self.chain.forEach((b) => {
                 try {
                     let data = b.getBData();
-                    console.log(data);
                     if (data.owner === address) {
                         stars.push(data);
                     }

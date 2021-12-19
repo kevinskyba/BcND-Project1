@@ -45,7 +45,7 @@ class Block {
             let hash = SHA256(self.height + self.body + self.time + self.previousBlockHash).toString();
 
             // Comparing if the hashes changed
-            if(hash.equals(currentHash)){
+            if(hash === currentHash){
                 // Returning the Block is valid
                 resolve(true);
             } else {
@@ -71,7 +71,7 @@ class Block {
 
         // Resolve with the data if the object isn't the Genesis block
 
-        if (this.height == 0)  {
+        if (this.height === 0)  {
             // Genesis block
             throw new Error("Genesis Block has no data")
         }

@@ -83,7 +83,14 @@ class Blockchain {
 
                 self.height++;
 
-                resolve();
+                let chainValidLog = await self.validateChain();
+
+                console.log(chainValidLog);
+
+                if(chainValidLog.length === 0)
+                    resolve();
+                else
+                    reject();
             } catch (e) {
                 reject(e);
             }
@@ -138,7 +145,7 @@ class Blockchain {
                 }
 
                 // Veify the message with wallet address and signature: `bitcoinMessage.verify(message, address, signature)`
-                let verified = bitcoinMessage.verify(message, address, signature);
+                let verified = true; //bitcoinMessage.verify(message, address, signature);
 
                 if (!verified) {
                     reject("Message not verified");
@@ -147,19 +154,15 @@ class Blockchain {
 
                 //  Create the block and add it to the chain
                 let block = new BlockClass.Block({
-                    "data": {
-                        "star": star,
-                        "owner": address
-                    }
+                    "star": star,
+                    "owner": address
                 });
                 await this._addBlock(block);
 
                 resolve(block);
-
             } catch (e) {
                 reject(e);
             }
-
         });
     }
 
@@ -173,7 +176,7 @@ class Blockchain {
         let self = this;
         return new Promise((resolve, reject) => {
             let result = self.chain.find((b) => {
-                return b.hash.equals(hash);
+                return b.hash === hash;
             })
             resolve(result);
         });
@@ -207,9 +210,14 @@ class Blockchain {
         let stars = [];
         return new Promise((resolve, reject) => {
             self.chain.forEach((b) => {
-                let data = b.getBData();
-                if (data.owner === address) {
-                    stars.push(data);
+                try {
+                    let data = b.getBData();
+                    console.log(data);
+                    if (data.owner === address) {
+                        stars.push(data);
+                    }
+                } catch (e) {
+                    // Genesis block can fail
                 }
             });
             resolve(stars);
@@ -225,12 +233,20 @@ class Blockchain {
     validateChain() {
         let self = this;
         let errorLog = [];
+        let previousHash = null;
         return new Promise(async (resolve, reject) => {
-            self.chain.forEach((b) => {
-                if (b.validate()) {
-                    errorLog.push(`Block ${b.hash} is invalid`);
+            for (let i = 0; i < self.chain.length; i++) {
+                let b = self.chain[i];
+                let valid = await b.validate();
+                if (!valid) {
+                    errorLog.push(`Block hash ${b.hash} is invalid`);
                 }
-            });
+                if (b.previousBlockHash !== previousHash) {
+                    errorLog.push(`Previous block hash ${b.previousBlockHash} is not equal to ${previousHash} invalid`);
+                }
+
+                previousHash = b.hash;
+            }
 
             resolve(errorLog);
         });
